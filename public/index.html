@@ -31,6 +31,7 @@
     var game = new Phaser.Game(config);
     var platforms;
 
+    // Normalmente usado para carregar o conteúdo e setar o que os elementos são
     function preload() {
       this.load.image("sky", "assets/sky.png");
       this.load.image("ground", "assets/platform.png");
@@ -42,6 +43,7 @@
       });
     }
 
+    // Usado para criar o conteúdo na tela e setar alguns fluxos de comandos, etc
     function create() {
       // Ponto interessante sobre o carregamento é o fato de que, a ordem que vc coloca para ser carregado,
       // vai influenciar na medida
@@ -62,9 +64,17 @@
       // -- CRIANDO O PLAYER
 
       player = this.physics.add.sprite(100, 450, "dude");
+      // Isso seta a força do pulo do objeto com o cenário assim que cai
       player.setBounce(0.2);
-      player.setCollideWorldBounds(true);
+      // Se vai ter colisão do pulo com o cenário ou não - Caso sete false, é capaz do personagem
+      // Sair da tela ao bater nas bordas do jogo
+      player.setCollideWorldBounds(false);
 
+      // Aqui vc cria a animação de movimento junto com o teclado
+      // key: Tecla de ativação
+      // frames: Como vc vai usar um personagem com uma frequencia de frames é necessesário indicar de onde, até onde ele irá pegar para fazer o movimento
+      // framesRates: Quantidade de quadro por segundo, vc pode aumentar e isso vai dar impresão que ele esta mais rápido, etc.
+      // repeat: -1 -> indica que esse fluxo vai ficar se repetindo enquanto a tecla estiver pressionada
       this.anims.create({
         key: "left",
         frames: this.anims.generateFrameNumbers("dude", { start: 0, end: 3 }),
@@ -85,30 +95,52 @@
         repeat: -1,
       });
 
+      // Isso determina a gravidade naquele objeto, então quanto mais pesado a gravidade, mais rápido ele caíra e menor impulso vai ter com o salto
       player.body.setGravityY(300);
 
+      // é necessário indicar o grupo de objetos que vão poder ter colisão entre eles, por causa da física aplicada nos corpos
       this.physics.add.collider(player, platforms);
 
+      // Objeto usado para criar a manipulação de eventos no teclado por chaves
       cursors = this.input.keyboard.createCursorKeys();
+
+      stars = this.physics.add.group({
+        key: "star",
+        repeat: 11,
+        setXY: { x: 12, y: 0, stepX: 70 },
+      });
+
+      stars.children.iterate(function (child) {
+        child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+      });
+
+      this.physics.add.collider(stars, platforms);
+
+      function collectStars(player, star){
+        star.disableBody(true, true)
+      }
+
+      this.physics.add.overlap(player, stars, collectStars, null, this);
+
     }
 
     function update() {
+      // Verifica se a tecla left está sendo pressionada e aplica algum tipo de física
       if (cursors.left.isDown) {
         player.setVelocityX(-160);
-
         player.anims.play("left", true);
       } else if (cursors.right.isDown) {
         player.setVelocityX(160);
-
         player.anims.play("right", true);
       } else {
         player.setVelocityX(0);
-
         player.anims.play("turn");
       }
 
+      // Para fazer o pulo é necessário dois fluxos, primeiro saber se ele esta apertando a tecla UP do teclado e
+      // Se ele estatocando ao chão, acredito que se tirar o chÃO vc pode ficar dando duplo pulo, vamos testar kkk
       if (cursors.up.isDown && player.body.touching.down) {
-        player.setVelocityY(-330);
+        player.setVelocityY(-480);
       }
     }
   </script>
